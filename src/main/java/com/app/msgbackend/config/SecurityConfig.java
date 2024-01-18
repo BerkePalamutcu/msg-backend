@@ -1,6 +1,7 @@
 package com.app.msgbackend.config;
 
 
+import com.app.msgbackend.utils.CustomAuthEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,8 +33,10 @@ public class SecurityConfig {
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer.
+                        authenticationEntryPoint(new CustomAuthEntryPoint()));
+                //if token is missing or expired making sure that it will only send 401 response back!
         return http.build();
     }
 }

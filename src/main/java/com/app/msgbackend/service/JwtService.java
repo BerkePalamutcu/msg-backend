@@ -1,6 +1,8 @@
 package com.app.msgbackend.service;
 
+import com.app.msgbackend.exception.TokenExpiredException;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -37,7 +39,7 @@ public class JwtService {
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
+                .setExpiration(new Date(System.currentTimeMillis() + 10000 * 60 * 24))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -56,12 +58,17 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token){
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseClaimsJwt(token)
-                .getBody();
+        try{
+            return Jwts
+                    .parserBuilder()
+                    .setSigningKey(getSignInKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            //the token expire is thrown during the parsing of the token so need to handle it before reaching servlet.
+            throw new TokenExpiredException("Token is expired");
+        }
     }
 
     private Key getSignInKey() {
